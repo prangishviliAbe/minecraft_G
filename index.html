@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Voxel World - Ladder Fix</title>
+    <title>Voxel World - Santa Fix</title>
 
     <style>
         :root {
@@ -368,7 +368,7 @@
     <!-- Start Screen -->
     <div id="start-screen">
         <h1 style="font-size: 3rem;">ვოქსელ სამყარო</h1>
-        <p>განახლება: Ladder Fix 🪜</p>
+        <p>განახლება: Better Santa Shape 🎅</p>
         <button class="btn btn-primary" id="btn-start">დაწყება</button>
         <button class="btn btn-outline" id="btn-settings-open">⚙️ გრაფიკა</button>
         <button class="btn btn-outline" id="btn-fullscreen">🖥️ სრული ეკრანი</button>
@@ -472,11 +472,20 @@
                 { id: 'wheat', color: '#DAA520', roughness: 1.0, transparent: true, textureType: 'wheat' },
                 { id: 'wool_pink', color: '#FFB6C1', roughness: 1.0, textureType: 'wool' },
                 { id: 'wool_black', color: '#111', roughness: 1.0, textureType: 'wool' },
-                { id: 'wool_white', color: '#eee', roughness: 1.0, textureType: 'wool' }
+                { id: 'wool_white', color: '#eee', roughness: 1.0, textureType: 'wool' },
+
+                // Christmas Blocks
+                { id: 'pine_leaves', color: '#1a472a', transparent: true, roughness: 1.0, textureType: 'leaves' },
+                { id: 'ornament_red', color: '#ff0000', roughness: 0.2, metalness: 0.5, isLight: true, textureType: 'wool' },
+                { id: 'ornament_blue', color: '#0088ff', roughness: 0.2, metalness: 0.5, isLight: true, textureType: 'wool' },
+                { id: 'star', color: '#ffd700', roughness: 0.1, metalness: 1.0, isLight: true, textureType: 'gold' },
+                { id: 'present_red', color: '#ff0000', roughness: 0.8, textureType: 'wool' },
+                { id: 'present_green', color: '#00ff00', roughness: 0.8, textureType: 'wool' },
+                { id: 'wool_red', color: '#D32F2F', roughness: 1.0, textureType: 'wool' } // For Santa
             ];
 
             // Active hotbar
-            let HOTBAR_SLOTS = ['sword', 'hay', 'ladder', 'brick', 'wheat', 'lava', 'wool_white', 'torch'];
+            let HOTBAR_SLOTS = ['sword', 'hay', 'ladder', 'brick', 'present_red', 'star', 'wool_red', 'torch'];
 
             class ParticleSystem {
                 constructor(scene) {
@@ -715,6 +724,9 @@
                             let x = Math.random() * size;
                             ctx.fillRect(x, size / 2, 5, size / 2);
                         }
+                    } else if (type === 'gold') {
+                        ctx.fillStyle = '#ffd700'; ctx.fillRect(0, 0, size, size);
+                        ctx.fillStyle = '#ffec8b'; ctx.fillRect(0, 0, size, size / 2); // Shiny top
                     } else if (type === 'wool') {
                         // Default fill is already color
                         addNoise(5000, 2, 0.1);
@@ -751,6 +763,9 @@
                         let emissive = 0x000000; let emissiveIntensity = 0.0;
 
                         if (b.id === 'fire' || b.id === 'torch' || b.id === 'lava') { emissive = b.color; emissiveIntensity = 1.0; }
+                        if (b.id.includes('ornament')) { emissive = b.color; emissiveIntensity = 0.5; }
+                        if (b.id === 'star') { emissive = b.color; emissiveIntensity = 1.0; }
+
                         if (!b.transparent && b.id !== 'obsidian') {
                             if (rtLevel > 0) { rough = rough * mod; metal = Math.min(1.0, metal + (rtLevel * 0.1)); }
                         }
@@ -1015,6 +1030,7 @@
                     const house1Pos = { x: 10, z: 10, r: 7 };
                     const house2Pos = { x: -15, z: -15, r: 7 };
                     const farmPos = { x: -25, z: 25, width: 20, height: 15 }; // Farm Area
+                    const treePos = { x: 0, z: -25 }; // Christmas Tree Position
 
                     const add = (x, y, z, type) => {
                         terrainData.push({ x, y, z, type });
@@ -1034,6 +1050,9 @@
                                     h = 12;
                                 }
 
+                                // Flatten for Christmas Tree
+                                if (Math.abs(x - treePos.x) < 8 && Math.abs(z - treePos.z) < 8) h = 12;
+
                                 if (h < 0) h = 0;
                                 let type = 'grass';
                                 if (h < CONFIG.WATER_LEVEL + 2) type = 'sand';
@@ -1048,8 +1067,9 @@
                                     const inHouse1 = Math.abs(x - house1Pos.x) < house1Pos.r && Math.abs(z - house1Pos.z) < house1Pos.r;
                                     const inHouse2 = Math.abs(x - house2Pos.x) < house2Pos.r && Math.abs(z - house2Pos.z) < house2Pos.r;
                                     const inFarm = x > farmPos.x && x < farmPos.x + farmPos.width && z > farmPos.z && z < farmPos.z + farmPos.height;
+                                    const inTree = Math.abs(x - treePos.x) < 8 && Math.abs(z - treePos.z) < 8;
 
-                                    if (type === 'grass' && !inHouse1 && !inHouse2 && !inFarm && Math.random() > 0.98) {
+                                    if (type === 'grass' && !inHouse1 && !inHouse2 && !inFarm && !inTree && Math.random() > 0.98) {
                                         this.addTree(x, h, z, terrainData);
                                     }
                                 }
@@ -1082,6 +1102,8 @@
                         this.addHouse(house1Pos.x, 15, house1Pos.z, terrainData);
                         this.addHouse(house2Pos.x, 12, house2Pos.z, terrainData);
                         this.addFarm(farmPos.x, 12, farmPos.z, terrainData); // BUILD FARM
+                        this.addChristmasTree(treePos.x, 12, treePos.z, terrainData); // BUILD CHRISTMAS TREE
+                        this.addSanta(treePos.x + 6, 12, treePos.z + 6, terrainData); // BUILD SANTA
 
                         let ph = this.getHeight(18, 18); this.portalLocation.y = ph;
                         this.addPortal(18, ph, 18, terrainData);
@@ -1208,6 +1230,94 @@
                     data.push({ x: x + 10, y: y + 1, z: z + 6, type: 'stone' });
                 }
 
+                addChristmasTree(x, y, z, data) {
+                    // Trunk
+                    const height = 18;
+                    for (let i = 0; i < height; i++) {
+                        data.push({ x: x, y: y + i, z: z, type: 'wood' });
+                        if (i < 4) { // Thicker base
+                            data.push({ x: x + 1, y: y + i, z: z, type: 'wood' });
+                            data.push({ x: x - 1, y: y + i, z: z, type: 'wood' });
+                            data.push({ x: x, y: y + i, z: z + 1, type: 'wood' });
+                            data.push({ x: x, y: y + i, z: z - 1, type: 'wood' });
+                        }
+                    }
+
+                    // Leaves (Conical layers)
+                    const startH = 4;
+                    let radius = 6;
+                    for (let h = startH; h < height; h++) {
+                        if (h % 2 === 0 && radius > 1) radius--;
+
+                        for (let lx = -radius; lx <= radius; lx++) {
+                            for (let lz = -radius; lz <= radius; lz++) {
+                                if (Math.abs(lx) + Math.abs(lz) <= radius + 1 && !(lx === 0 && lz === 0)) {
+                                    let type = 'pine_leaves';
+                                    if (Math.random() > 0.9) {
+                                        type = Math.random() > 0.5 ? 'ornament_red' : 'ornament_blue';
+                                        if (Math.random() > 0.8) {
+                                            // Add particles for ornaments
+                                            this.fireAndTorches.push({ x: x + lx, y: y + h, z: z + lz, type: 'sparkle' });
+                                        }
+                                    }
+                                    data.push({ x: x + lx, y: y + h, z: z + lz, type: type });
+                                }
+                            }
+                        }
+                    }
+
+                    // Star on top
+                    data.push({ x: x, y: y + height, z: z, type: 'star' });
+                    this.fireAndTorches.push({ x: x, y: y + height, z: z, type: 'star' });
+
+                    // Presents under the tree
+                    for (let i = 0; i < 8; i++) {
+                        const px = x + (Math.random() * 8 - 4);
+                        const pz = z + (Math.random() * 8 - 4);
+                        if (Math.abs(px - x) > 2 || Math.abs(pz - z) > 2) { // Don't put inside trunk
+                            const pType = Math.random() > 0.5 ? 'present_red' : 'present_green';
+                            data.push({ x: Math.round(px), y: y + 1, z: Math.round(pz), type: pType });
+                        }
+                    }
+                }
+
+                addSanta(x, y, z, data) {
+                    // Boots
+                    data.push({ x: x - 1, y: y + 1, z: z, type: 'wool_black' });
+                    data.push({ x: x + 1, y: y + 1, z: z, type: 'wool_black' });
+
+                    // Pants
+                    data.push({ x: x - 1, y: y + 2, z: z, type: 'wool_red' });
+                    data.push({ x: x + 1, y: y + 2, z: z, type: 'wool_red' });
+
+                    // Body
+                    for (let i = -1; i <= 1; i++) {
+                        data.push({ x: x + i, y: y + 3, z: z, type: 'wool_red' }); // Waist
+                        data.push({ x: x + i, y: y + 4, z: z, type: 'wool_red' }); // Chest
+                    }
+
+                    // Belt
+                    data.push({ x: x, y: y + 3, z: z + 1, type: 'wool_black' });
+
+                    // Arms
+                    data.push({ x: x - 2, y: y + 4, z: z, type: 'wool_red' }); // Shoulder
+                    data.push({ x: x - 2, y: y + 3, z: z, type: 'wool_white' }); // Hand
+
+                    data.push({ x: x + 2, y: y + 4, z: z, type: 'wool_red' }); // Shoulder
+                    data.push({ x: x + 2, y: y + 3, z: z, type: 'wool_white' }); // Hand
+
+                    // Head
+                    data.push({ x: x, y: y + 5, z: z, type: 'wool_pink' });
+                    // Beard
+                    data.push({ x: x, y: y + 5, z: z + 1, type: 'wool_white' });
+                    data.push({ x: x - 1, y: y + 5, z: z, type: 'wool_white' });
+                    data.push({ x: x + 1, y: y + 5, z: z, type: 'wool_white' });
+
+                    // Hat
+                    data.push({ x: x, y: y + 6, z: z, type: 'wool_red' });
+                    data.push({ x: x + 1, y: y + 6, z: z, type: 'wool_white' });
+                }
+
                 addPortal(x, y, z, data) { for (let py = 0; py < 5; py++) { for (let px = 0; px < 4; px++) { if (py === 0 || py === 4 || px === 0 || px === 3) { data.push({ x: x + px, y: y + py, z: z, type: 'obsidian' }); } else { data.push({ x: x + px, y: y + py, z: z, type: 'portal' }); } } } for (let px = -1; px < 5; px++) { for (let pz = -1; pz < 2; pz++) { if (px < 0 || px > 3 || pz !== 0) data.push({ x: x + px, y: y - 1, z: z + pz, type: 'stone' }); } } }
 
                 removeBlock(intersect) {
@@ -1246,6 +1356,7 @@
                     if (type === 'fire') { this.fireAndTorches.push({ x, y: y + 0.5, z, type: 'fire' }); }
                     if (type === 'torch') { this.fireAndTorches.push({ x, y: y + 0.6, z, type: 'torch' }); }
                     if (type === 'lava') { this.fireAndTorches.push({ x, y: y + 0.6, z, type: 'lava' }); }
+                    if (type === 'star') { this.fireAndTorches.push({ x, y: y + 0.5, z, type: 'star' }); }
                     mesh.castShadow = true; mesh.receiveShadow = true;
                     this.scene.add(mesh); this.colliders.push(mesh);
                     this.blockData.set(this.k(x, y, z), type);
